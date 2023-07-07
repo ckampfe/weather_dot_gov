@@ -5,7 +5,7 @@ defmodule WeatherDotGov.MixProject do
     [
       app: :weather_dot_gov,
       version: "0.1.0",
-      elixir: "~> 1.15",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
