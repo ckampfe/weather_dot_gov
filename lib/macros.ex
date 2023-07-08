@@ -21,6 +21,8 @@ defmodule WeatherDotGov.Macros do
       end)
       |> Map.fetch!("url")
 
+    param_regex = ~r/\{(?<param>\w+)\}/
+
     operations =
       Enum.map(paths, fn {path, path_def} ->
         function_name =
@@ -31,7 +33,7 @@ defmodule WeatherDotGov.Macros do
         function_docs = get_in(path_def, ["get", "description"])
 
         params =
-          Regex.scan(~r/\{(?<param>\w+)\}/, path)
+          Regex.scan(param_regex, path)
           |> Enum.map(fn [_match, param] ->
             param
           end)
