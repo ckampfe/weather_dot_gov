@@ -21,7 +21,7 @@ defmodule WeatherDotGov.Macros do
       end)
       |> Map.fetch!("url")
 
-    param_regex = ~r/\{(?<param>\w+)\}/
+    param_regex = ~r/\{(\w+)\}/
 
     operations =
       Enum.map(paths, fn {path, path_def} ->
@@ -32,24 +32,13 @@ defmodule WeatherDotGov.Macros do
 
         function_docs = get_in(path_def, ["get", "description"])
 
-        params =
-          Regex.scan(param_regex, path)
-          |> Enum.map(fn [_match, param] ->
-            param
-          end)
-
-        snaked_params =
-          params
-          |> Enum.map(fn arg ->
-            Recase.to_snake(arg)
-          end)
-
         # so we can construct an argument list with actual names, like
         # def func(a, b, c)
         function_args =
-          snaked_params
-          |> Enum.map(fn param ->
+          Regex.scan(param_regex, path)
+          |> Enum.map(fn [_match, param] ->
             param
+            |> Recase.to_snake()
             |> String.to_atom()
             |> Macro.var(nil)
           end)
@@ -57,20 +46,18 @@ defmodule WeatherDotGov.Macros do
         # construct an EEx template so we can do a string replace
         # on the given request path schema, like:
         # `/alerts/active/zone/<%= zoneId %>` to `/alerts/active/zone/MN`
-        url =
+        url_template =
           (server <>
-             (params
-              |> Enum.zip(snaked_params)
-              |> Enum.reduce(path, fn {original_param, snaked_param}, acc ->
-                String.replace(acc, "{#{original_param}}", "<%= #{snaked_param} %>")
-              end)))
+             Regex.replace(param_regex, path, fn _whole_match, param ->
+               "<%= #{Recase.to_snake(param)} %>"
+             end))
           |> EEx.compile_string()
 
         %{
           function_name: function_name,
           function_docs: function_docs,
           function_args: function_args,
-          url: url
+          url_template: url_template
         }
       end)
 
@@ -97,11 +84,11 @@ defmodule WeatherDotGov.Macros do
           function_name: function_name,
           function_docs: function_docs,
           function_args: function_args,
-          url: url
+          url_template: url_template
         } ->
           @doc function_docs
           def unquote(String.to_atom(function_name))(unquote_splicing(function_args)) do
-            {:ok, resp} = Req.get(unquote(url))
+            {:ok, resp} = Req.get(unquote(url_template))
 
             {"content-type", content_type} = :lists.keyfind("content-type", 1, resp.headers)
 
