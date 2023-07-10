@@ -88,19 +88,32 @@ defmodule WeatherDotGov.Macros do
         } ->
           @doc function_docs
           def unquote(String.to_atom(function_name))(unquote_splicing(function_args)) do
-            {:ok, resp} = Req.get(unquote(url_template))
+            response = Req.get(unquote(url_template))
 
-            {"content-type", content_type} = :lists.keyfind("content-type", 1, resp.headers)
+            with {:http, {:ok, resp}} <- {:http, response},
+                 {:content_type, {"content-type", content_type}} <-
+                   {:content_type, :lists.keyfind("content-type", 1, resp.headers)} do
+              case content_type do
+                "application/ld+json" ->
+                  {:ok, Map.put(resp, :body, Jason.decode!(resp.body))}
 
-            case content_type do
-              "application/ld+json" ->
-                {:ok, Map.put(resp, :body, Jason.decode!(resp.body))}
+                "application/vnd.wmo.iwxxm+xml" ->
+                  {:ok, Map.put(resp, :body, SweetXml.parse(resp.body))}
 
-              "application/vnd.wmo.iwxxm+xml" ->
-                {:ok, Map.put(resp, :body, SweetXml.parse(resp.body))}
+                _ ->
+                  {:ok, resp}
+              end
+            else
+              # `:lists.keyfind/3` returns `false` if it cannot kind
+              # the an element with the given key, which in this case
+              # would mean that the request did not have a `content-type` header,
+              # so just return the raw response
+              {:content_type, false} ->
+                response
 
-              _ ->
-                {:ok, resp}
+              # otherwise return whatever error the HTTP request happens to return
+              {:http, {:error, _} = e} ->
+                e
             end
           end
       end)
