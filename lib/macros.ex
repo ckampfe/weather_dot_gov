@@ -114,9 +114,6 @@ defmodule WeatherDotGov.Macros do
                 "application/ld+json" ->
                   {:ok, Map.put(resp, :body, Jason.decode!(resp.body))}
 
-                "application/vnd.wmo.iwxxm+xml" ->
-                  {:ok, Map.put(resp, :body, SweetXml.parse(resp.body))}
-
                 _ ->
                   {:ok, resp}
               end
