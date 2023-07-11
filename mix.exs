@@ -27,7 +27,7 @@ defmodule WeatherDotGov.MixProject do
       {:sweet_xml, "~> 0.7"},
       {:recase, "~> 0.7"},
       {:req, "~> 0.3"},
-      {:ex_doc, "~> 0.29", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.30", only: :dev, runtime: false}
     ]
   end
 
