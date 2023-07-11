@@ -14,7 +14,7 @@ by adding `weather` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:weather_dot_gov, "~> 0.2.0"}
+    {:weather_dot_gov, "~> 0.2.1"}
   ]
 end
 ```

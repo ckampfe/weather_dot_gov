@@ -100,7 +100,7 @@ defmodule WeatherDotGov.Macros do
           url_path: url_path
         } ->
           if is_deprecated? do
-            @deprecated "weather.gov has reports that this endpoint is deprecated."
+            @deprecated "weather.gov has reports that this endpoint is deprecated"
           end
 
           @doc function_docs <> "\n\n" <> "Endpoint: " <> url_path
