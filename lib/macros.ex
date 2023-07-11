@@ -30,7 +30,7 @@ defmodule WeatherDotGov.Macros do
                               "operationId" => operation_id,
                               "description" => description
                             }
-                          } = _path_definition} ->
+                          } = path_definition} ->
         function_name =
           Recase.to_snake(operation_id)
 
@@ -57,11 +57,18 @@ defmodule WeatherDotGov.Macros do
 
         url_template = EEx.compile_string(url_host <> url_path_template)
 
+        # not all path definitions have the `deprecated` key,
+        # so we have to get it this way rather than pattern match on it
+        is_deprecated? =
+          get_in(path_definition, ["get", "deprecated"])
+
         %{
           function_name: function_name,
           function_docs: function_docs,
           function_args: function_args,
-          url_template: url_template
+          url_template: url_template,
+          is_deprecated: is_deprecated?,
+          url_path: url_path
         }
       end)
 
@@ -88,9 +95,15 @@ defmodule WeatherDotGov.Macros do
           function_name: function_name,
           function_docs: function_docs,
           function_args: function_args,
-          url_template: url_template
+          url_template: url_template,
+          is_deprecated: is_deprecated?,
+          url_path: url_path
         } ->
-          @doc function_docs
+          if is_deprecated? do
+            @deprecated "weather.gov has reports that this endpoint is deprecated."
+          end
+
+          @doc function_docs <> "\n\n" <> "Endpoint: " <> url_path
           def unquote(String.to_atom(function_name))(unquote_splicing(function_args)) do
             response = Req.get(unquote(url_template))
 
