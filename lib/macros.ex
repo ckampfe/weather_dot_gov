@@ -14,7 +14,7 @@ defmodule WeatherDotGov.Macros do
       |> File.read!()
       |> Jason.decode!()
 
-    server =
+    url_host =
       servers
       |> Enum.find(servers, fn server ->
         Map.fetch!(server, "url")
@@ -24,18 +24,22 @@ defmodule WeatherDotGov.Macros do
     param_regex = ~r/\{(\w+)\}/
 
     operations =
-      Enum.map(paths, fn {path, path_def} ->
+      Enum.map(paths, fn {url_path,
+                          %{
+                            "get" => %{
+                              "operationId" => operation_id,
+                              "description" => description
+                            }
+                          } = _path_definition} ->
         function_name =
-          path_def
-          |> get_in(["get", "operationId"])
-          |> Recase.to_snake()
+          Recase.to_snake(operation_id)
 
-        function_docs = get_in(path_def, ["get", "description"])
+        function_docs = description
 
         # so we can construct an argument list with actual names, like
         # def func(a, b, c)
         function_args =
-          Regex.scan(param_regex, path)
+          Regex.scan(param_regex, url_path)
           |> Enum.map(fn [_match, param] ->
             param
             |> Recase.to_snake()
@@ -46,12 +50,12 @@ defmodule WeatherDotGov.Macros do
         # construct an EEx template so we can do a string replace
         # on the given request path schema, like:
         # `/alerts/active/zone/<%= zoneId %>` to `/alerts/active/zone/MN`
-        url_template =
-          (server <>
-             Regex.replace(param_regex, path, fn _whole_match, param ->
-               "<%= #{Recase.to_snake(param)} %>"
-             end))
-          |> EEx.compile_string()
+        url_path_template =
+          Regex.replace(param_regex, url_path, fn _whole_match, param ->
+            "<%= #{Recase.to_snake(param)} %>"
+          end)
+
+        url_template = EEx.compile_string(url_host <> url_path_template)
 
         %{
           function_name: function_name,
