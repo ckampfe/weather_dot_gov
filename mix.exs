@@ -24,9 +24,9 @@ defmodule WeatherDotGov.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:recase, "~> 0.7"},
-      {:req, "~> 0.3"},
-      {:ex_doc, "~> 0.30", only: :dev, runtime: false}
+      {:recase, "~> 0.8"},
+      {:req, "~> 0.5", optional: true},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 

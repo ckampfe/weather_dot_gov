@@ -2,6 +2,7 @@ defmodule WeatherDotGov.Macros do
   @moduledoc false
 
   defmacro __using__(options) do
+    http_module = options[:http_module] || Req
     api_definition = options[:definition] || "openapi.json"
 
     %{
@@ -76,7 +77,8 @@ defmodule WeatherDotGov.Macros do
             openapi: Macro.escape(openapi),
             info: Macro.escape(info),
             servers: Macro.escape(servers),
-            operations: Macro.escape(operations)
+            operations: Macro.escape(operations),
+            http_module: http_module
           ] do
       def open_api_version() do
         unquote(openapi)
@@ -105,24 +107,20 @@ defmodule WeatherDotGov.Macros do
 
           @doc function_docs <> "\n\n" <> "Endpoint: " <> url_path
           def unquote(String.to_atom(function_name))(unquote_splicing(function_args)) do
-            response = Req.get(unquote(url_template))
+            response = unquote(http_module).get(unquote(url_template))
 
             with {:http, {:ok, resp}} <- {:http, response},
-                 {:content_type, {"content-type", content_type}} <-
-                   {:content_type, :lists.keyfind("content-type", 1, resp.headers)} do
+                 {:content_type, content_type} <-
+                   {:content_type, Map.get(resp.headers, "content-type", :no_content_type)} do
               case content_type do
-                "application/ld+json" ->
+                ["application/ld+json"] ->
                   {:ok, Map.put(resp, :body, Jason.decode!(resp.body))}
 
                 _ ->
                   {:ok, resp}
               end
             else
-              # `:lists.keyfind/3` returns `false` if it cannot kind
-              # the an element with the given key, which in this case
-              # would mean that the request did not have a `content-type` header,
-              # so just return the raw response
-              {:content_type, false} ->
+              {:content_type, :no_content_type} ->
                 response
 
               # otherwise return whatever error the HTTP request happens to return
