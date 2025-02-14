@@ -23,10 +23,9 @@ defmodule WeatherDotGov.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jason, "~> 1.4"},
       {:recase, "~> 0.8"},
       {:req, "~> 0.5", optional: true},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.37", only: :dev, runtime: false}
     ]
   end
 

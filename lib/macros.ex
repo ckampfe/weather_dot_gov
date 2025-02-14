@@ -13,7 +13,7 @@ defmodule WeatherDotGov.Macros do
     } =
       api_definition
       |> File.read!()
-      |> Jason.decode!()
+      |> JSON.decode!()
 
     url_host =
       servers
@@ -114,7 +114,7 @@ defmodule WeatherDotGov.Macros do
                    {:content_type, Map.get(resp.headers, "content-type", :no_content_type)} do
               case content_type do
                 ["application/ld+json"] ->
-                  {:ok, Map.put(resp, :body, Jason.decode!(resp.body))}
+                  {:ok, Map.put(resp, :body, JSON.decode!(resp.body))}
 
                 _ ->
                   {:ok, resp}
