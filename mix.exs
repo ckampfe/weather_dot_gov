@@ -4,8 +4,8 @@ defmodule WeatherDotGov.MixProject do
   def project do
     [
       app: :weather_dot_gov,
-      version: "0.4.0",
-      elixir: "~> 1.14",
+      version: "0.5.0",
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
